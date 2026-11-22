@@ -1,0 +1,3 @@
+# Copy to terraform.tfvars and set your own values. Never commit terraform.tfvars.
+admin_username = "azureuser"
+admin_password = "Ch4ngeMe-Example-Only!"

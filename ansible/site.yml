@@ -1,0 +1,60 @@
+---
+- name: Install and Configure Nginx
+  hosts: web
+  become: true
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Install nginx and git
+      ansible.builtin.apt:
+        name:
+          - nginx
+          - git
+        state: present
+
+    - name: Start and enable nginx
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
+
+- name: Clone and Deploy Mini Finance Site
+  hosts: web
+  become: true
+  tasks:
+    - name: Remove existing content from /var/www/html
+      ansible.builtin.file:
+        path: /var/www/html
+        state: absent
+
+    - name: Clone Mini Finance repository
+      ansible.builtin.git:
+        repo: https://github.com/pravinmishraaws/mini_finance.git
+        dest: /var/www/html
+        version: main
+        update: yes
+
+    - name: Set ownership for www-data
+      ansible.builtin.file:
+        path: /var/www/html
+        owner: www-data
+        group: www-data
+        recurse: true
+      notify: reload nginx
+
+  handlers:
+    - name: reload nginx
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded
+
+- name: Verify Deployment
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Check site returns HTTP 200
+      ansible.builtin.uri:
+        url: "http://{{ groups['web'][0] }}"
+        status_code: 200
